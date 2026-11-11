@@ -13,6 +13,10 @@ This project demonstrates reuse with those tested APIs. It does not claim compat
 - Result collection and heuristic failure analysis.
 - Vitest adapter and reporter integration.
 - A standalone Node.js script that validates REST requests and collection without importing Vitest.
+- Self-contained HTML reports with run summaries, normalized results, and failure analysis.
+- Test-file grouping with collapsible groups and sidebar navigation.
+- Expandable stack traces and responsive report layout.
+- Automatic report opening after local Vitest runs, with configurable output path.
 
 ## Architecture
 
@@ -52,7 +56,31 @@ Available GraphQL assertions check HTTP status and success, data properties and 
 
 ### Vitest and failure analysis
 
-The Vitest adapter maps Vitest outcomes to the shared result contract. The reporter collects and prints structured results to the console. It does not write standalone JSON or HTML report files.
+The Vitest adapter maps Vitest outcomes to the shared result contract. The reporter prints structured results to the console and writes a self-contained HTML report after each configured Vitest run. `ResultCollector` validates results and attaches `FailureAnalyzer` classifications and recommendations when available.
+
+The HTML report includes run summary cards, individual test results, collapsible groups based on each result's source file, and a file navigation sidebar. Failure details are visible in each failed result; full stack traces remain in their own expandable sections. The report uses a responsive layout and opens in the default browser after local runs when a graphical environment is available. Browser opening is skipped in CI and headless environments.
+
+The default report path is `reports/test-report.html`. Set `UBTF_HTML_REPORT_PATH` to choose another output path, or set `UBTF_OPEN_HTML_REPORT=false` to disable automatic browser opening. Generated reports are ignored by Git.
+
+#### HTML report preview
+
+![HTML Test Report](assets/html-report-preview.png)
+
+To generate a report for the failure examples, run:
+
+```bash
+node scripts/html-error-demo.js
+```
+
+This writes `reports/error-demo-report.html` without adding intentional failures to the regular Vitest suite. Open either generated report directly in a browser if needed.
+
+The standalone PocketBase validation is a separate script:
+
+```bash
+node scripts/pocketbase-standalone-validation.js
+```
+
+It exercises the REST components against the local PocketBase service; see [tests/README.md](tests/README.md) for its requirements.
 
 `FailureAnalyzer` uses message and error-name patterns to classify assertion, property-access, range, reference, syntax, and aggregate errors. It also has an `unknown` fallback. These are heuristic diagnostic clues, not proof of a root cause.
 
@@ -104,19 +132,9 @@ node scripts/pocketbase-standalone-validation.js
 
 This script requires the same local PocketBase service and collection as the PocketBase integration test. It uses the framework's REST client, adapter, assertions, test adapter, schema, and collector. It prints a summary and collected results. One intentional assertion failure is included to demonstrate the `assertion_failure` analysis category; this is expected behavior, not a failed validation run.
 
-## Verified validation results
+## Latest verified test run
 
-The project owner reported the following completed validation:
-
-- Vitest: **135/135** unit and reporter integration tests passed.
-- Shared Table REST integration: **1/1** passed.
-- Local GraphQL integration: **5/5** passed.
-- PocketBase REST integration: **1/1** passed.
-- Rick and Morty external GraphQL integration: **5/5** passed.
-- Total Vitest: **147/147** tests passed across **19 test files**.
-- Standalone Node.js: **6** real PocketBase HTTP scenarios passed; the deliberate assertion failure was detected and classified as `assertion_failure` without Vitest.
-
-These results describe the reported run; external service availability and local configuration can affect future executions.
+The current default `npm test` suite passed **155/155 tests across 17 test files**. This run includes unit tests and the reporter integration test configured in `vitest.config.js`; it does not include the four backend integration suites. Those suites have separate commands and external requirements documented in [tests/README.md](tests/README.md). Their results are not reported here because they were not run as part of this latest verification.
 
 ## Current limitations
 
@@ -125,7 +143,7 @@ These results describe the reported run; external service availability and local
 - GraphQL support uses JSON POST over HTTP. Subscriptions and other transports such as WebSocket are not implemented.
 - Authentication can be supplied with headers, but the framework does not implement a universal login or token-refresh flow.
 - Assertions are explicit helpers rather than generated API contracts or schema discovery.
-- Failure analysis is heuristic. Persistent report generation, HTML reports, coverage collection, CI workflows, and secret redaction are not implemented.
+- Failure analysis is heuristic. Persistent JSON reports, coverage collection, CI workflows, and secret redaction are not implemented.
 - `package.json` names `index.js` as its `main` entry, but the repository currently has no root `index.js`. The source modules can be imported by their file paths; a package-level entry point has not been established.
 - The package is marked `private`, so the current metadata does not permit npm publication.
 

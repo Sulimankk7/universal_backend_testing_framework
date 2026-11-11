@@ -1,11 +1,13 @@
 
 import ResultCollector from '../../core/collection/result-collector.js';
+import { writeHtmlReport } from '../../reporting/html/html-report.js';
+import { openHtmlReport } from '../../reporting/html/open-html-report.js';
 import { mapVitestTestCase } from './vitest-adapter.js';
 
 /** Vitest lifecycle bridge into the framework's normalized core. */
 export default class UniversalReporter {
   /** @param {{ collector?: ResultCollector, testType?: string, report?: (results: object[]) => void }} options */
-  constructor({ collector = new ResultCollector(), testType = 'unit', report = null } = {}) {
+  constructor({ collector = new ResultCollector(), testType = 'unit', report = writeHtmlReport } = {}) {
     this.collector = collector;
     this.testType = testType;
     this.report = report;
@@ -25,12 +27,16 @@ export default class UniversalReporter {
   }
 
   /** Emit the collected report and call the optional reporting hook. */
-  onTestRunEnd() {
+  async onTestRunEnd() {
     const results = this.collector.getResults();
 
     console.log('\n[Universal Framework] Test run completed');
     console.log(`Captured results: ${results.length}`);
     console.log(JSON.stringify(results, null, 2));
-    this.report?.(results);
+    const reportPath = await this.report?.(results);
+    if (reportPath) {
+      console.log(`[Universal Framework] HTML report saved: ${reportPath}`);
+      await openHtmlReport(reportPath);
+    }
   }
 }

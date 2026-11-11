@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Documentation excluded from publication
+docs/
+
+# Build and test outputs
+dist/
+build/
+coverage/
+reports/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
