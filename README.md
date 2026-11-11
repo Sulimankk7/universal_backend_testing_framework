@@ -66,6 +66,12 @@ The default report path is `reports/test-report.html`. Set `UBTF_HTML_REPORT_PAT
 
 ![HTML Test Report](assets/html-report-preview.png)
 
+#### Failed Test Report
+
+The isolated error demonstration shows failed test names and error messages, failure classifications, expected and actual values when available, recommendations when available, and stack traces that readers can expand when needed.
+
+![Failed HTML Test Report](assets/html-report-errors.png)
+
 To generate a report for the failure examples, run:
 
 ```bash
