@@ -4,6 +4,38 @@ A JavaScript testing framework prototype for exercising REST and GraphQL HTTP AP
 
 This project demonstrates reuse with those tested APIs. It does not claim compatibility with every backend, every authentication scheme, or every GraphQL transport.
 
+## Package API and local installation
+
+UBTF is an ES module package intended for local development and integration. Its package root (`universal-backend-testing-framework`) is the supported external API; direct imports from `src/` are implementation details and may change.
+
+The root API exports:
+
+- `UniversalReporter` — Vitest lifecycle reporter that collects normalized results and writes/opens the HTML report.
+- `ResultCollector` — validates, analyzes, and stores normalized test results.
+- `TestErrorSchema` and `TestResultSchema` — Zod schemas for the shared result contract.
+- `analyzeFailure` — heuristic analysis of a normalized error.
+- `createRestClient`, `createRestAdapter`, `normalizeResponse`, and `createRestTestAdapter` — REST HTTP client, response normalization, and callback-result collection.
+- `createGraphQLClient`, `createGraphQLAdapter`, `normalizeGraphQLResponse`, and `createGraphQLTestAdapter` — GraphQL JSON-over-HTTP client, response normalization, and callback-result collection.
+- `renderHtmlReport` and `writeHtmlReport` — render a report string or write a self-contained HTML report.
+
+For a sibling project, add a relative local dependency (adjust the path for your directory layout):
+
+```json
+{
+  "dependencies": {
+    "universal-backend-testing-framework": "file:../Universal Backend Testing Framework"
+  }
+}
+```
+
+Then import only from the package root:
+
+```js
+import { ResultCollector, UniversalReporter, createRestClient } from 'universal-backend-testing-framework';
+```
+
+The package remains private and is not intended for npm publication. Vitest itself is a development dependency for this repository's test suite, and consumers should install their own test runner. The standalone Endpoint Tester is currently an executable application and is not part of the root public API. Local dependency installation from another project has not yet been exercised in this phase.
+
 ## Capabilities
 
 - REST requests using Node.js Fetch: `GET`, `POST`, `PUT`, `PATCH`, and `DELETE`.
@@ -140,7 +172,7 @@ This script requires the same local PocketBase service and collection as the Poc
 
 ## Latest verified test run
 
-The current default `npm test` suite passed **155/155 tests across 17 test files**. This run includes unit tests and the reporter integration test configured in `vitest.config.js`; it does not include the four backend integration suites. Those suites have separate commands and external requirements documented in [tests/README.md](tests/README.md). Their results are not reported here because they were not run as part of this latest verification.
+The current default `npm test` suite passed **168/168 tests across 20 test files**. This run includes unit tests and the reporter integration test configured in `vitest.config.js`; it does not include the four backend integration suites. Those suites have separate commands and external requirements documented in [tests/README.md](tests/README.md). Their results are not reported here because they were not run as part of this latest verification.
 
 ## Current limitations
 
@@ -150,7 +182,7 @@ The current default `npm test` suite passed **155/155 tests across 17 test files
 - Authentication can be supplied with headers, but the framework does not implement a universal login or token-refresh flow.
 - Assertions are explicit helpers rather than generated API contracts or schema discovery.
 - Failure analysis is heuristic. Persistent JSON reports, coverage collection, CI workflows, and secret redaction are not implemented.
-- `package.json` names `index.js` as its `main` entry, but the repository currently has no root `index.js`. The source modules can be imported by their file paths; a package-level entry point has not been established.
-- The package is marked `private`, so the current metadata does not permit npm publication.
+- The package intentionally exposes only its root API through the `exports` map. Deep imports into `src/` are unsupported even though those files are included to satisfy internal relative imports.
+- Local installation from a sibling project is configured but has not yet been tested by installing it into a separate consumer project.
 
 Older planning documents are retained locally as project history and are excluded from the publication file list.

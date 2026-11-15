@@ -2,12 +2,20 @@
   "name": "universal-backend-testing-framework",
   "version": "1.0.0",
   "description": "A reusable backend testing framework",
+  "files": [
+    "index.js",
+    "src/",
+    "README.md"
+  ],
   "main": "index.js",
-  "directories": {
-    "doc": "docs"
+  "exports": {
+    ".": {
+      "import": "./index.js"
+    }
   },
   "scripts": {
     "test": "vitest run",
+    "endpoint-tester": "node src/endpoint-tester/server.js",
     "test:errors": "vitest run tests/unit/error-scenarios.test.js",
     "test:watch": "vitest"
   },
@@ -15,12 +23,12 @@
   "author": "",
   "license": "ISC",
   "type": "module",
-  "private": "true",
+  "private": true,
   "devDependencies": {
+    "graphql": "^16.15.0",
     "vitest": "^5.1.0"
   },
   "dependencies": {
-    "graphql": "^16.15.0",
     "zod": "^4.6.7"
   }
 }
