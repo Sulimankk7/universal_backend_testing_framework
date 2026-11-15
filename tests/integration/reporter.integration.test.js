@@ -1,5 +1,5 @@
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 import UniversalReporter from '../../src/adapters/vitest/vitest-reporter.js';
 
@@ -176,6 +176,62 @@ describe('UniversalReporter Integration', () => {
     ]);
 
     expect(new Set(results.map((result) => result.id)).size).toBe(3);
+  });
+
+  it('should report module collection errors separately from test result counts', async () => {
+    const report = vi.fn(async () => undefined);
+    const reporter = new UniversalReporter({ report });
+    const error = {
+      name: 'SyntaxError',
+      message: 'Unexpected token',
+      stack: 'SyntaxError: Unexpected token\n    at broken.test.js:1:1',
+    };
+
+    await reporter.onTestRunEnd([{
+      moduleId: 'tests/broken.test.js',
+      relativeModuleId: 'tests/broken.test.js',
+      state: () => 'failed',
+      errors: () => [error],
+      result: () => undefined,
+    }], [], 'failed');
+
+    expect(report).toHaveBeenCalledOnce();
+    expect(report.mock.calls[0][0]).toEqual([]);
+    expect(report.mock.calls[0][1].runErrors).toEqual([expect.objectContaining({
+      file: 'tests/broken.test.js',
+      name: 'SyntaxError',
+      message: 'Unexpected token',
+      stack: error.stack,
+      failureAnalysis: expect.objectContaining({ category: 'syntax_error' }),
+    })]);
+  });
+
+  it('should not duplicate a module error when its failed test was already collected', async () => {
+    const report = vi.fn(async () => undefined);
+    const reporter = new UniversalReporter({ report });
+    const testCase = createFakeTestCase({
+      state: 'failed',
+      errors: [{ name: 'AssertionError', message: 'expected 1 to be 2' }],
+    });
+
+    reporter.onTestCaseResult(testCase);
+    await reporter.onTestRunEnd([{
+      moduleId: 'tests/example.test.js',
+      state: () => 'failed',
+      errors: () => [{ name: 'Error', message: 'suite failed' }],
+    }], [], 'failed');
+
+    expect(report.mock.calls[0][0]).toHaveLength(1);
+    expect(report.mock.calls[0][1].runErrors).toEqual([]);
+  });
+
+  it('should pass an interrupted run status to the report hook', async () => {
+    const report = vi.fn(async () => undefined);
+    const reporter = new UniversalReporter({ report });
+
+    await reporter.onTestRunEnd([], [], 'interrupted');
+
+    expect(report.mock.calls[0][1].runStatus).toBe('interrupted');
   });
 
   it('should reset previous test results', () => {

@@ -9,9 +9,12 @@ const STATUS_LABELS = {
 };
 
 /** Render normalized test results as a self-contained HTML document. */
-export function renderHtmlReport(results, { generatedAt = new Date() } = {}) {
+export function renderHtmlReport(results, { generatedAt = new Date(), runErrors = [], runStatus = 'passed' } = {}) {
   if (!Array.isArray(results)) {
     throw new TypeError('Test results must be provided as an array.');
+  }
+  if (!Array.isArray(runErrors)) {
+    throw new TypeError('Run errors must be provided as an array.');
   }
 
   const generatedDate = generatedAt instanceof Date ? generatedAt : new Date(generatedAt);
@@ -23,11 +26,14 @@ export function renderHtmlReport(results, { generatedAt = new Date() } = {}) {
   const successRate = results.length === 0
     ? '0.0'
     : ((counts.passed / results.length) * 100).toFixed(1);
-  const overallStatus = results.length === 0
-    ? 'No results'
-    : counts.failed > 0
+  const runFailed = runStatus === 'failed' || runErrors.length > 0 || counts.failed > 0;
+  const overallStatus = runStatus === 'interrupted'
+    ? 'Interrupted'
+    : runFailed
       ? 'Failed'
-      : 'Passed';
+      : results.length === 0
+        ? 'No results'
+        : 'Passed';
   const generatedIso = generatedDate.toISOString();
   const generatedDisplay = generatedDate.toLocaleString();
 
@@ -36,6 +42,17 @@ export function renderHtmlReport(results, { generatedAt = new Date() } = {}) {
   const renderedGroups = groups.length === 0
     ? '<p class="empty-state">No test results are available for this run.</p>'
     : groups.map(renderResultGroup).join('\n');
+  const renderedRunErrors = runErrors.length === 0
+    ? ''
+    : `<section class="section run-errors" aria-labelledby="run-errors-title">
+  <div class="section-heading"><h2 id="run-errors-title">Vitest run errors</h2><span class="result-count">${runErrors.length} ${runErrors.length === 1 ? 'error' : 'errors'}</span></div>
+  <div class="run-error-list">${runErrors.map(renderRunError).join('\n')}</div>
+</section>`;
+  const runStatusNotice = runStatus === 'interrupted'
+    ? '<p class="run-status-notice" role="status">Vitest run was interrupted before all tests completed.</p>'
+    : runStatus === 'failed' && runErrors.length === 0 && counts.failed === 0
+      ? '<p class="run-status-notice" role="status">Vitest marked the run as failed without a captured test or module error.</p>'
+      : '';
 
   return `<!doctype html>
 <html lang="en">
@@ -137,6 +154,13 @@ export function renderHtmlReport(results, { generatedAt = new Date() } = {}) {
     details.failure { border-left: 3px solid var(--red); padding: 10px 12px 12px; background: var(--red-bg); }
     details.failure summary { color: #79202b; cursor: pointer; font-size: 12px; font-weight: 700; }
     .failure-content { display: grid; gap: 14px; margin-top: 14px; }
+    .run-errors { margin-bottom: 18px; border-color: #e4b8bd; }
+    .run-status-notice { margin: 0 0 18px; border: 1px solid var(--amber); border-radius: 10px; background: var(--amber-bg); padding: 14px 18px; color: var(--text); font-size: 13px; }
+    .overall.interrupted::before { background: var(--amber); }
+    .run-error-list { display: grid; }
+    .run-error { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .run-error:last-child { border-bottom: 0; }
+    .run-error-file { margin: 0 0 12px; color: var(--muted); font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; }
     .failure-block { min-width: 0; }
     .failure-label { margin-bottom: 4px; color: #79202b; font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: .045em; }
     .failure-value { color: #3c2024; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; white-space: pre-wrap; }
@@ -175,12 +199,14 @@ export function renderHtmlReport(results, { generatedAt = new Date() } = {}) {
         <h1>Universal Backend Testing Framework</h1>
         <p class="generated">Generated <time datetime="${escapeHtml(generatedIso)}">${escapeHtml(generatedDisplay)}</time></p>
       </div>
-      <div class="overall ${results.length === 0 ? 'empty' : counts.failed > 0 ? 'failed' : 'passed'}" role="status">${escapeHtml(overallStatus)}</div>
+      <div class="overall ${runStatus === 'interrupted' ? 'interrupted' : runFailed ? 'failed' : results.length === 0 ? 'empty' : 'passed'}" role="status">${escapeHtml(overallStatus)}</div>
     </header>
 
     <div class="report-layout">
       ${fileNavigation}
       <div class="report-main">
+        ${runStatusNotice}
+        ${renderedRunErrors}
         <section class="summary" aria-label="Test summary">
           ${renderSummaryCard('Total tests', results.length, 'total')}
           ${renderSummaryCard('Passed', counts.passed, 'passed')}
@@ -234,10 +260,10 @@ export function renderHtmlReport(results, { generatedAt = new Date() } = {}) {
 /** Write a self-contained report and return its resolved output path. */
 export async function writeHtmlReport(
   results,
-  { outputPath = process.env.UBTF_HTML_REPORT_PATH || 'reports/test-report.html', generatedAt = new Date() } = {},
+  { outputPath = process.env.UBTF_HTML_REPORT_PATH || 'reports/test-report.html', generatedAt = new Date(), runErrors = [], runStatus = 'passed' } = {},
 ) {
   const resolvedPath = resolve(outputPath);
-  const html = renderHtmlReport(results, { generatedAt });
+  const html = renderHtmlReport(results, { generatedAt, runErrors, runStatus });
 
   await mkdir(dirname(resolvedPath), { recursive: true });
   await writeFile(resolvedPath, html, 'utf8');
@@ -325,6 +351,14 @@ function renderResultRow(result) {
   <td class="duration">${escapeHtml(duration)}</td>
   <td>${details}</td>
 </tr>`;
+}
+
+function renderRunError(error) {
+  const analysis = error?.failureAnalysis;
+  return `<article class="run-error">
+  <h3 class="run-error-file">${escapeHtml(error?.file || 'Vitest run')}</h3>
+  <div class="failure-content">${renderFailure(error, analysis)}</div>
+</article>`;
 }
 
 function renderFailure(error, analysis) {

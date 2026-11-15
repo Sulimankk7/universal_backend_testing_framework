@@ -88,7 +88,13 @@ Available GraphQL assertions check HTTP status and success, data properties and 
 
 ### Vitest and failure analysis
 
-The Vitest adapter maps Vitest outcomes to the shared result contract. The reporter prints structured results to the console and writes a self-contained HTML report after each configured Vitest run. `ResultCollector` validates results and attaches `FailureAnalyzer` classifications and recommendations when available.
+The Vitest adapter maps Vitest outcomes to the shared result contract. The reporter prints structured results to the console and writes a self-contained HTML report after each configured Vitest run. Test-module collection errors and unhandled run errors appear in a separate report section, so they do not inflate test counts. Interrupted run status is shown separately from the counts of results collected before interruption. `ResultCollector` validates results and attaches `FailureAnalyzer` classifications and recommendations when available.
+
+When a custom report callback delegates to `writeHtmlReport`, forward its optional report metadata so run-level errors and interruptions are included:
+
+```js
+report: (results, reportOptions) => writeHtmlReport(results, reportOptions)
+```
 
 The HTML report includes run summary cards, individual test results, collapsible groups based on each result's source file, and a file navigation sidebar. Failure details are visible in each failed result; full stack traces remain in their own expandable sections. The report uses a responsive layout and opens in the default browser after local runs when a graphical environment is available. Browser opening is skipped in CI and headless environments.
 

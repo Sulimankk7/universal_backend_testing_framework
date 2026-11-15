@@ -104,6 +104,45 @@ describe('HTML test report', () => {
     expect(html).toContain('0.0%');
   });
 
+  it('renders run-level failures without counting them as tests', () => {
+    const html = renderHtmlReport([], {
+      generatedAt,
+      runErrors: [{
+        file: 'tests/broken.test.js',
+        name: 'SyntaxError',
+        message: 'Unexpected token <script>',
+        stack: 'SyntaxError: Unexpected token <script>',
+        failureAnalysis: {
+          category: 'syntax_error',
+          summary: 'The JavaScript code contains invalid syntax.',
+          evidence: { originalMessage: 'Unexpected token <script>' },
+          recommendation: 'Review the source syntax.',
+          confidence: 'medium',
+        },
+      }],
+    });
+
+    expect(html).toContain('class="overall failed"');
+    expect(html).toContain('Vitest run errors');
+    expect(html).toContain('data-summary="total"><div class="card-label">Total tests</div><div class="card-value">0</div>');
+    expect(html).toContain('tests/broken.test.js');
+    expect(html).toContain('syntax_error');
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).not.toContain('Unexpected token <script>');
+  });
+
+  it('labels an interrupted run even when its captured tests passed', () => {
+    const html = renderHtmlReport([result()], {
+      generatedAt,
+      runStatus: 'interrupted',
+    });
+
+    expect(html).toContain('class="overall interrupted"');
+    expect(html).toContain('>Interrupted</div>');
+    expect(html).toContain('Vitest run was interrupted before all tests completed.');
+    expect(html).toContain('data-summary="passed"><div class="card-label">Passed</div><div class="card-value">1</div>');
+  });
+
   it('escapes test names and error content before embedding them in HTML', () => {
     const html = renderHtmlReport([
       result({
