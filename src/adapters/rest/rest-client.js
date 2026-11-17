@@ -13,7 +13,7 @@ export function createRestClient(config) {
   const defaultHeaders = createHeaders(config.headers, 'Default headers');
 
   /**
-   * @param {'GET'|'POST'|'PUT'|'PATCH'|'DELETE'} method HTTP method.
+   * @param {'GET'|'POST'|'PUT'|'PATCH'|'DELETE'|'HEAD'|'OPTIONS'} method HTTP method.
    * @param {string} path Relative endpoint path.
    * @param {unknown} [body] JSON-compatible request body.
    * @param {RequestOptions} [options] Per-request options.
@@ -34,7 +34,7 @@ export function createRestClient(config) {
 
     const init = { ...options, method, headers };
     delete init.headers;
-    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+    if (['POST', 'PUT', 'PATCH'].includes(method)) {
       if (body !== undefined) {
         init.body = JSON.stringify(body);
         if (!headers.has('content-type')) headers.set('Content-Type', 'application/json');
@@ -59,6 +59,8 @@ export function createRestClient(config) {
     patch: (path, body, options) => request('PATCH', path, body, options),
     /** @param {string} path @param {RequestOptions} [options] */
     delete: (path, options) => request('DELETE', path, undefined, options),
+    head: (path, options) => request('HEAD', path, undefined, options),
+    options: (path, options) => request('OPTIONS', path, undefined, options),
   });
 }
 

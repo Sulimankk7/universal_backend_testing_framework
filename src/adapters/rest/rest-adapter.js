@@ -9,7 +9,7 @@ export function createRestAdapter(restClient) {
     throw new TypeError('A REST client is required.');
   }
 
-  const methods = ['get', 'post', 'put', 'patch', 'delete'];
+  const methods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'];
   for (const method of methods) {
     if (typeof restClient[method] !== 'function') {
       throw new TypeError(`REST client must provide a ${method} method.`);
