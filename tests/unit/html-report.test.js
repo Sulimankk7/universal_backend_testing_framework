@@ -35,12 +35,24 @@ describe('HTML test report', () => {
     const html = renderHtmlReport([result()], { generatedAt });
 
     expect(html).toContain('Universal Backend Testing Framework');
-    expect(html).toContain('Records &gt; creates a record');
-    expect(html).toContain('Generated');
-    expect(html).toContain('data-summary="total"><div class="card-label">Total tests</div><div class="card-value">1</div>');
+    expect(html).toContain('<span class="brand-mark" aria-hidden="true">UB</span>');
+    expect(html).toContain('creates a record');
+    expect(html).toContain('HTML Test Execution Report');
+    expect(html).toContain('Completed');
+    expect(html).not.toContain('Generated</');
+    expect(html).toContain('data-summary="total"><div class="card-label">Total Tests</div><div class="card-value">1</div>');
     expect(html).toContain('data-summary="passed"><div class="card-label">Passed</div><div class="card-value">1</div>');
     expect(html).toContain('100.0%');
-    expect(html).toContain('class="overall passed"');
+    expect(html).toContain('class="rate-track" role="progressbar"');
+  });
+
+  it('renders an explicitly provided consumer project name', () => {
+    const html = renderHtmlReport([result()], {
+      generatedAt,
+      projectName: 'Shared Table Backend',
+    });
+
+    expect(html).toContain('<strong>Project</strong>Shared Table Backend');
   });
 
   it('renders error messages, expected and actual values, and analyzer guidance', () => {
@@ -61,7 +73,7 @@ describe('HTML test report', () => {
     expect(html).toContain('Actual: 3');
     expect(html).toContain('Review the expected value');
     expect(html).toContain('<details class="failure" open>');
-    expect(html).toContain('class="overall failed"');
+    expect(html).toContain('All test files');
   });
 
   it('calculates counts for passed, failed, skipped, and pending results', () => {
@@ -73,7 +85,7 @@ describe('HTML test report', () => {
       result({ id: 'todo', status: 'todo' }),
     ], { generatedAt });
 
-    expect(html).toContain('data-summary="total"><div class="card-label">Total tests</div><div class="card-value">5</div>');
+    expect(html).toContain('data-summary="total"><div class="card-label">Total Tests</div><div class="card-value">5</div>');
     expect(html).toContain('data-summary="passed"><div class="card-label">Passed</div><div class="card-value">2</div>');
     expect(html).toContain('data-summary="failed"><div class="card-label">Failed</div><div class="card-value">1</div>');
     expect(html).toContain('data-summary="skipped"><div class="card-label">Skipped</div><div class="card-value">1</div>');
@@ -98,9 +110,8 @@ describe('HTML test report', () => {
   it('renders an explicit empty state and zero success rate', () => {
     const html = renderHtmlReport([], { generatedAt });
 
-    expect(html).toContain('No results');
     expect(html).toContain('No test results are available for this run.');
-    expect(html).toContain('data-summary="total"><div class="card-label">Total tests</div><div class="card-value">0</div>');
+    expect(html).toContain('data-summary="total"><div class="card-label">Total Tests</div><div class="card-value">0</div>');
     expect(html).toContain('0.0%');
   });
 
@@ -122,9 +133,9 @@ describe('HTML test report', () => {
       }],
     });
 
-    expect(html).toContain('class="overall failed"');
+    expect(html).toContain('aria-label="Run information"');
     expect(html).toContain('Vitest run errors');
-    expect(html).toContain('data-summary="total"><div class="card-label">Total tests</div><div class="card-value">0</div>');
+    expect(html).toContain('data-summary="total"><div class="card-label">Total Tests</div><div class="card-value">0</div>');
     expect(html).toContain('tests/broken.test.js');
     expect(html).toContain('syntax_error');
     expect(html).toContain('&lt;script&gt;');
@@ -137,8 +148,6 @@ describe('HTML test report', () => {
       runStatus: 'interrupted',
     });
 
-    expect(html).toContain('class="overall interrupted"');
-    expect(html).toContain('>Interrupted</div>');
     expect(html).toContain('Vitest run was interrupted before all tests completed.');
     expect(html).toContain('data-summary="passed"><div class="card-label">Passed</div><div class="card-value">1</div>');
   });
@@ -200,9 +209,9 @@ describe('HTML test report', () => {
 
     expect(groups).toHaveLength(2);
     expect(groups[0][2]).toContain('tests/records.test.js');
-    expect(groups[0][2]).toContain('2 tests');
+    expect(groups[0][2]).toContain('first record test');
     expect(groups[1][2]).toContain('tests/rest-client.test.js');
-    expect(groups[1][2]).toContain('1 test');
+    expect(groups[1][2]).toContain('first REST test');
     expect(groups[0][2].indexOf('first record test')).toBeLessThan(groups[0][2].indexOf('second record test'));
     expect(html.indexOf('tests/records.test.js')).toBeLessThan(html.indexOf('tests/rest-client.test.js'));
   });
@@ -214,7 +223,7 @@ describe('HTML test report', () => {
     ], { generatedAt });
 
     expect(html.match(/Unknown Source/g)).toHaveLength(2);
-    expect(html).toContain('2 tests');
+    expect(html).toContain('class="file-navigation-count">2</span>');
   });
 
   it('keeps failure details visible while leaving stack traces collapsed by default', () => {
@@ -262,14 +271,15 @@ describe('HTML test report', () => {
     const html = renderHtmlReport(results, { generatedAt });
     const rerendered = renderHtmlReport(results, { generatedAt });
     const groupIds = [...html.matchAll(/<details class="file-group" id="([^"]+)" open>/g)].map((match) => match[1]);
-    const links = [...html.matchAll(/<a class="file-navigation-link" href="#([^"]+)">([\s\S]*?)<\/a>/g)];
+    const links = [...html.matchAll(/<a class="file-navigation-link[^"]*" href="#([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)];
 
     expect(html).toContain('<nav class="file-navigation" aria-label="Test files">');
-    expect(html).toContain('2 files');
-    expect(links).toHaveLength(2);
-    expect(links[0][2]).toContain('tests/a.test.js');
-    expect(links[1][2]).toContain('tests/b.test.js');
-    expect(links.map((link) => link[1])).toEqual(groupIds);
+    expect(html).toContain('file-navigation-total">2</span>');
+    expect(links).toHaveLength(3);
+    expect(links[0][2]).toContain('All test files');
+    expect(links[1][2]).toContain('tests/a.test.js');
+    expect(links[2][2]).toContain('tests/b.test.js');
+    expect(links.slice(1).map((link) => link[1])).toEqual(groupIds);
     expect(new Set(groupIds).size).toBe(2);
     expect(rerendered.match(/<details class="file-group" id="([^"]+)" open>/g)).toEqual(
       html.match(/<details class="file-group" id="([^"]+)" open>/g),
@@ -341,9 +351,12 @@ describe('HTML test report', () => {
       result({ id: 'mixed-fail', file: 'tests/mixed.test.js', status: 'failed', errors: [{ name: 'Error', message: 'failed' }] }),
     ], { generatedAt });
 
-    expect(html).toContain('file-status passed');
-    expect(html).toContain('file-status failed');
-    expect(html).toContain('file-status mixed');
+    expect(html).toContain('file-status-dot passed');
+    expect(html).toContain('file-status-label passed');
+    expect(html).toContain('file-status-dot failed');
+    expect(html).toContain('file-status-label failed');
+    expect(html).toContain('file-status-dot mixed');
+    expect(html).toContain('file-status-label mixed');
     expect(html).toContain('>Passed</span>');
     expect(html).toContain('>Failed</span>');
     expect(html).toContain('>Mixed</span>');

@@ -34,7 +34,19 @@ Then import only from the package root:
 import { ResultCollector, UniversalReporter, createRestClient } from 'universal-backend-testing-framework';
 ```
 
-The package remains private and is not intended for npm publication. Vitest itself is a development dependency for this repository's test suite, and consumers should install their own test runner. The standalone Endpoint Tester is currently an executable application and is not part of the root public API. Local dependency installation from another project has not yet been exercised in this phase.
+The package remains private and is not intended for npm publication. Vitest itself is a development dependency for this repository's test suite, and consumers should install their own test runner. The standalone Endpoint Tester is currently an executable application and is not part of the root public API.
+
+### Refreshing a local UBTF dependency
+
+The previous Shared Table installs used packed copies under `node_modules` (with `--install-links=true`), not live views of UBTF source. The lockfile records the local path and package version but not a content hash, so npm can report the dependency as up to date after renderer source changes. In the Shared Table Backend and Frontend projects, run this after a fresh install or whenever the dependency needs to be reconnected to the UBTF source:
+
+```bash
+npm run refresh:ubtf
+```
+
+The script removes the installed UBTF package and any now-unused nested dependencies without saving dependency changes, then reinstalls it from the local folder with `--install-links=false`. npm creates a link to the sibling package source, so renderer edits are immediately consumed. Rerun the refresh command after `npm ci` or any install that replaces the link with a packed copy. It does not change the dependency declaration or lockfile. Run it in each consumer project after the project's normal `npm install`.
+
+Each consumer's Vitest config imports `UniversalReporter` and `writeHtmlReport` from the package root, supplies its project name and output path, and forwards the reporter metadata. It contains no report template or CSS. The generated report is written to that consumer's `reports/test-report.html` by default; `UBTF_HTML_REPORT_PATH` can override it.
 
 ## Capabilities
 
@@ -90,7 +102,7 @@ Available GraphQL assertions check HTTP status and success, data properties and 
 
 The Vitest adapter maps Vitest outcomes to the shared result contract. The reporter prints structured results to the console and writes a self-contained HTML report after each configured Vitest run. Test-module collection errors and unhandled run errors appear in a separate report section, so they do not inflate test counts. Interrupted run status is shown separately from the counts of results collected before interruption. `ResultCollector` validates results and attaches `FailureAnalyzer` classifications and recommendations when available.
 
-When a custom report callback delegates to `writeHtmlReport`, forward its optional report metadata so run-level errors and interruptions are included:
+When a custom report callback delegates to `writeHtmlReport`, forward its optional report metadata so run-level errors, interruptions, and the configured project name are included:
 
 ```js
 report: (results, reportOptions) => writeHtmlReport(results, reportOptions)

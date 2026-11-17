@@ -234,6 +234,15 @@ describe('UniversalReporter Integration', () => {
     expect(report.mock.calls[0][1].runStatus).toBe('interrupted');
   });
 
+  it('should pass the configured project name to the report hook', async () => {
+    const report = vi.fn(async () => undefined);
+    const reporter = new UniversalReporter({ projectName: 'Shared Table Frontend', report });
+
+    await reporter.onTestRunEnd([], [], 'passed');
+
+    expect(report.mock.calls[0][1].projectName).toBe('Shared Table Frontend');
+  });
+
   it('should reset previous test results', () => {
     const reporter = new UniversalReporter();
 

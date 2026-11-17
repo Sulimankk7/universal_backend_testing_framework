@@ -7,10 +7,11 @@ import { mapVitestTestCase } from './vitest-adapter.js';
 
 /** Vitest lifecycle bridge into the framework's normalized core. */
 export default class UniversalReporter {
-  /** @param {{ collector?: ResultCollector, testType?: string, report?: (results: object[], reportOptions?: { runErrors: object[], runStatus: string }) => void }} options */
-  constructor({ collector = new ResultCollector(), testType = 'unit', report = writeHtmlReport } = {}) {
+  /** @param {{ collector?: ResultCollector, testType?: string, projectName?: string, report?: (results: object[], reportOptions?: { runErrors: object[], runStatus: string, projectName: string }) => void }} options */
+  constructor({ collector = new ResultCollector(), testType = 'unit', projectName = 'Universal Backend Testing Framework', report = writeHtmlReport } = {}) {
     this.collector = collector;
     this.testType = testType;
+    this.projectName = projectName;
     this.report = report;
     this.failedTestFiles = new Set();
   }
@@ -44,7 +45,7 @@ export default class UniversalReporter {
       console.error(`[Universal Framework] Run-level errors: ${runErrors.length}`);
       console.error(JSON.stringify(runErrors, null, 2));
     }
-    const reportPath = await this.report?.(results, { runErrors, runStatus });
+    const reportPath = await this.report?.(results, { runErrors, runStatus, projectName: this.projectName });
     if (reportPath) {
       console.log(`[Universal Framework] HTML report saved: ${reportPath}`);
       await openHtmlReport(reportPath);
