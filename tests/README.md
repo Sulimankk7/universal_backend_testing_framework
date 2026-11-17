@@ -1,12 +1,12 @@
 # Testing Guide
 
-This guide documents the commands and prerequisites defined by the repository's current `package.json` and Vitest configuration files. Run commands from the repository root.
+This guide documents the commands and prerequisites defined by the repository's current `package.json` and Vitest configuration files. Run all commands from the repository root.
 
-## Prerequisites and installation
+## Prerequisites and Installation
 
-- Node.js supported by the locked Vitest toolchain and with built-in Fetch support. Node 20.19+ or Node 22.12+ is a suitable baseline for the current lockfile.
-- npm, using the committed `package-lock.json`.
-- Internet access only for the external Rick and Morty GraphQL suite and dependency installation.
+- **Node.js:** Node 20.19+ or Node 22.12+ is a suitable baseline for the current locked Vitest toolchain.
+- **npm:** Use npm with the committed `package-lock.json`.
+- **Internet access:** Required for dependency installation and the external Rick and Morty GraphQL test suite.
 
 Install the locked dependencies:
 
@@ -14,63 +14,99 @@ Install the locked dependencies:
 npm ci
 ```
 
-The framework test configurations do not require a project `.env` file. Shared Table's own local PostgreSQL configuration must be set in that backend project.
+The framework's test configurations do not require a project `.env` file. However, Shared Table's local PostgreSQL configuration must be set up in the Shared Table backend project before running its REST integration tests.
 
-## All unit tests
+## Default Test Suite
 
-Run all files under `tests/unit/`:
-
-```bash
-npx vitest run tests/unit
-```
-
-This selects the Core, REST, GraphQL, and Vitest adapter unit tests. Unit tests do not require a backend service.
-
-## Complete default Vitest suite
-
-Run the repository's default configured suite:
+Run the repository's default test suite:
 
 ```bash
 npm test
 ```
 
-The `test` script runs `vitest run --config config/vitest/vitest.config.js`. `config/vitest/vitest.config.js` includes every unit test and `tests/integration/reporter.integration.test.js`. This default command does **not** include the three backend integration suites, which have dedicated configurations.
+This command executes:
 
-## Integration suites
+- All unit tests under `tests/unit/`, covering the Core, REST, GraphQL, and Vitest adapters.
+- The reporter integration test at `tests/integration/reporter.integration.test.js`.
 
-Run each dedicated suite separately.
+The command uses the configuration defined in `config/vitest/vitest.config.js`.
 
-### Shared Table REST
+No backend service or project `.env` file is required for this suite.
+
+**Note:** The default test suite does not include the dedicated backend integration suites described below.
+
+## Integration Test Suites
+
+Each integration suite has its own npm script and Vitest configuration. Run them separately depending on the functionality you want to verify.
+
+### 1. Shared Table REST Integration
 
 ```bash
 npm run test:integration
 ```
 
-Requires the Shared Table REST API at `http://localhost:3000/api`, with its PostgreSQL connection and expected tables configured in the Shared Table backend. The test creates uniquely named users and products, exercises CRUD and error cases, then attempts cleanup of only its own records.
+**Prerequisites:**
 
-### Local GraphQL
+- The Shared Table REST API must be running at `http://localhost:3000/api`.
+- Its PostgreSQL connection must be configured.
+- The expected database tables must exist.
+
+This suite tests REST API operations, including CRUD functionality and error scenarios.
+
+It creates uniquely named users and products during execution and attempts to clean up only the records it created.
+
+### 2. Local GraphQL Integration
 
 ```bash
 npm run test:graphql
 ```
 
-No separate server is required. The test creates an in-process GraphQL fixture server bound to an ephemeral loopback port and closes it after the test.
+No separate GraphQL server is required.
 
-### External Rick and Morty GraphQL
+The test creates an in-process GraphQL fixture server bound to an ephemeral loopback port and closes it after execution.
+
+This suite verifies the GraphQL adapter against a controlled local environment.
+
+### 3. External Rick and Morty GraphQL Integration
 
 ```bash
 npm run test:rick-and-morty
 ```
 
-Requires Internet connectivity to `https://rickandmortyapi.com/graphql`. This suite performs read-only queries and does not require credentials or local services.
+**Prerequisites:**
 
-## Latest verification in this workspace
+- Internet connectivity.
+- Access to `https://rickandmortyapi.com/graphql`.
 
-| Suite | Result |
+This suite runs read-only GraphQL queries against the public Rick and Morty API.
+
+No credentials or local backend services are required.
+
+## Latest Verification Results
+
+The following results were recorded during the latest verification in the development workspace:
+
+| Test Suite | Result |
 |---|---|
-| `npm test` — unit tests and reporter integration | 206/206 passed across 20 files |
-| `npm run test:graphql` — local GraphQL fixture | 5/5 passed |
-| `npm run test:rick-and-morty` — external GraphQL API | 5/5 passed |
-| `npm run test:integration` — Shared Table REST | Not available: the local backend at `http://localhost:3000/api` could not be reached (`fetch failed`) |
+| `npm test` — Unit tests and reporter integration | 206/206 passed across 20 files |
+| `npm run test:graphql` — Local GraphQL fixture | 5/5 passed |
+| `npm run test:rick-and-morty` — External GraphQL API | 5/5 passed |
+| `npm run test:integration` — Shared Table REST | Not completed: the local backend at `http://localhost:3000/api` could not be reached (`fetch failed`) |
 
-All commands above use configurations in `config/vitest/`. The Shared Table configuration was invoked, but its local service was unavailable in this environment.
+The Shared Table REST configuration was invoked, but the required local service was unavailable in that environment.
+
+## Configuration Reference
+
+All Vitest configurations are located in:
+
+```text
+config/vitest/
+├── vitest.config.js
+├── vitest.integration.config.js
+├── vitest.graphql.integration.config.js
+└── vitest.rick-and-morty.integration.config.js
+```
+
+Each configuration defines a separate test scope and its required environment.
+
+For additional details about individual configurations, refer to `config/vitest/README.md`.
