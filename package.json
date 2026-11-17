@@ -14,10 +14,13 @@
     }
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run --config config/vitest/vitest.config.js",
+    "test:integration": "vitest run --config config/vitest/vitest.integration.config.js",
+    "test:graphql": "vitest run --config config/vitest/vitest.graphql.integration.config.js",
+    "test:rick-and-morty": "vitest run --config config/vitest/vitest.rick-and-morty.integration.config.js",
     "endpoint-tester": "node src/endpoint-tester/server.js",
-    "test:errors": "vitest run tests/unit/error-scenarios.test.js",
-    "test:watch": "vitest"
+    "test:errors": "vitest run --config config/vitest/vitest.config.js tests/unit/error-scenarios.test.js",
+    "test:watch": "vitest --config config/vitest/vitest.config.js"
   },
   "keywords": [],
   "author": "",

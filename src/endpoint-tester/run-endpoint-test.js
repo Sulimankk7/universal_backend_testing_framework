@@ -80,7 +80,7 @@ export async function runEndpointTest(config) {
     if (executionError) throw new Error(executionError);
     if (assertionFailed) throw new Error(testError);
   }});
-  // Collection is the canonical execution record. Assertion detail remains in this run's report payload.
+  // Collection is the canonical execution record; assertion details are returned to the Endpoint Tester UI.
   const record = collected;
   const result = {
     ...record,

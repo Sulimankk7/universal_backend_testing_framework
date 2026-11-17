@@ -86,16 +86,7 @@ function renderResult(result) {
     ${failedAssertions.map((assertion) => `<div class="failure-values"><span>${escapeHtml(assertion.name)} · Expected<code>${escapeHtml(format(assertion.expected))}</code></span><span>Actual<code>${escapeHtml(format(assertion.actual))}</code></span></div>`).join('')}
     ${result.execution.success ? '' : `<p class="failure-reason">Request execution failed: ${escapeHtml(result.execution.error)}</p>`}
     <div class="response-body"><h3>Response Body</h3><pre>${bodyMarkup}</pre></div>
-    <details class="response-meta"><summary>Response details</summary><pre>${escapeHtml(format(debug))}</pre></details>
-    <div class="report-actions"><button id="open-report" type="button">Open full HTML report</button></div>`;
-
-  $('open-report').onclick = () => {
-    const reportWindow = window.open('', '_blank');
-    if (!reportWindow) return;
-    reportWindow.document.open();
-    reportWindow.document.write(result.report);
-    reportWindow.document.close();
-  };
+    <details class="response-meta"><summary>Response details</summary><pre>${escapeHtml(format(debug))}</pre></details>`;
 }
 
 function format(value) {

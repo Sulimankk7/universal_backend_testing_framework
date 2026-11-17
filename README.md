@@ -1,6 +1,6 @@
 # Universal Backend Testing Framework
 
-A JavaScript testing framework prototype for exercising REST and GraphQL HTTP APIs through reusable clients, adapters, assertions, and a shared test-result model. The project has been validated against a local Shared Table REST backend, PocketBase, a local GraphQL fixture server, and the external Rick and Morty GraphQL API.
+A JavaScript testing framework prototype for exercising REST and GraphQL HTTP APIs through reusable clients, adapters, assertions, and a shared test-result model. The project has been validated against a local Shared Table REST backend, a local GraphQL fixture server, and the external Rick and Morty GraphQL API.
 
 This project demonstrates reuse with those tested APIs. It does not claim compatibility with every backend, every authentication scheme, or every GraphQL transport.
 
@@ -56,7 +56,6 @@ Each consumer's Vitest config imports `UniversalReporter` and `writeHtmlReport` 
 - REST and GraphQL test adapters that convert async callback outcomes to the shared result schema.
 - Result collection and heuristic failure analysis.
 - Vitest adapter and reporter integration.
-- A standalone Node.js script that validates REST requests and collection without importing Vitest.
 - Self-contained HTML reports with run summaries, normalized results, and failure analysis.
 - Test-file grouping with collapsible groups and sidebar navigation.
 - Expandable stack traces and responsive report layout.
@@ -76,10 +75,9 @@ src/
     vitest/       Vitest result adapter and reporter
 tests/
   unit/           Core, REST, GraphQL, and Vitest adapter tests
-  integration/    Shared Table, PocketBase, local and external GraphQL checks
+  integration/    Shared Table and local and external GraphQL checks
   fixtures/       Local GraphQL server and fixture data
   README.md       Test and validation guide
-scripts/          Standalone PocketBase Node.js validation
 ```
 
 ### Core Engine
@@ -130,14 +128,6 @@ node scripts/html-error-demo.js
 
 This writes `reports/error-demo-report.html` without adding intentional failures to the regular Vitest suite. Open either generated report directly in a browser if needed.
 
-The standalone PocketBase validation is a separate script:
-
-```bash
-node scripts/pocketbase-standalone-validation.js
-```
-
-It exercises the REST components against the local PocketBase service; see [tests/README.md](tests/README.md) for its requirements.
-
 `FailureAnalyzer` uses message and error-name patterns to classify assertion, property-access, range, reference, syntax, and aggregate errors. It also has an `unknown` fallback. These are heuristic diagnostic clues, not proof of a root cause.
 
 ## Setup
@@ -152,7 +142,7 @@ No project `.env` file is required for the documented checks. The local Shared T
 
 ## Running tests
 
-See [tests/README.md](tests/README.md) for prerequisites, exact commands, service requirements, expected results, and standalone validation details.
+See [tests/README.md](tests/README.md) for prerequisites and the latest verification results. Vitest configuration files and suite-specific commands are documented in [config/vitest/README.md](config/vitest/README.md).
 
 ### Unit tests and reporter integration
 
@@ -167,34 +157,23 @@ The root Vitest configuration includes all `tests/unit/**/*.test.js` files and `
 Run each integration suite separately so service requirements are explicit:
 
 ```bash
-npx vitest run --config vitest.integration.config.js
-npx vitest run --config vitest.graphql.integration.config.js
-npx vitest run --config vitest.pocketbase.integration.config.js
-npx vitest run --config vitest.rick-and-morty.integration.config.js
+npm run test:integration
+npm run test:graphql
+npm run test:rick-and-morty
 ```
 
 | Suite | Requirements |
 |---|---|
 | Shared Table REST | Backend at `http://localhost:3000/api`, PostgreSQL connection and expected tables configured in the Shared Table project. Creates unique test records and attempts cleanup. |
 | Local GraphQL | No external backend. The test creates a local fixture server on an ephemeral port. |
-| PocketBase REST | PocketBase at `http://127.0.0.1:8090`, with the public `products` collection and the fields used by the test. Creates and deletes its test record. |
 | Rick and Morty GraphQL | Internet access and availability of `https://rickandmortyapi.com/graphql`. Queries public data and does not mutate it. |
-
-### Standalone Node.js validation
-
-```bash
-node scripts/pocketbase-standalone-validation.js
-```
-
-This script requires the same local PocketBase service and collection as the PocketBase integration test. It uses the framework's REST client, adapter, assertions, test adapter, schema, and collector. It prints a summary and collected results. One intentional assertion failure is included to demonstrate the `assertion_failure` analysis category; this is expected behavior, not a failed validation run.
 
 ## Latest verified test run
 
-The current default `npm test` suite passed **168/168 tests across 20 test files**. This run includes unit tests and the reporter integration test configured in `vitest.config.js`; it does not include the four backend integration suites. Those suites have separate commands and external requirements documented in [tests/README.md](tests/README.md). Their results are not reported here because they were not run as part of this latest verification.
-
+The default `npm test` suite passed **206/206 tests across 20 test files**, including unit tests and the reporter integration test configured in `config/vitest/vitest.config.js`. The local GraphQL suite passed 5/5, and the external Rick and Morty suite passed 5/5. The Shared Table REST service was unavailable during the latest verification. See [tests/README.md](tests/README.md) for current verification details and [config/vitest/README.md](config/vitest/README.md) for commands and prerequisites.
 ## Current limitations
 
-- The framework is a set of reusable components and adapters; it does not provide a general test discovery or command-line runner of its own. Vitest runs the test suites, while the standalone script is a specific PocketBase validation.
+- The framework is a set of reusable components and adapters; it does not provide a general test discovery or command-line runner of its own. Vitest runs the test suites.
 - REST support is focused on standard HTTP methods and JSON request/response bodies. Multipart uploads and streaming are not covered by the current adapter.
 - GraphQL support uses JSON POST over HTTP. Subscriptions and other transports such as WebSocket are not implemented.
 - Authentication can be supplied with headers, but the framework does not implement a universal login or token-refresh flow.

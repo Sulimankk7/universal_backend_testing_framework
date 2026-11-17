@@ -202,8 +202,6 @@ h2 {
 .response-meta { border-top: 1px solid #E5E7EB; }
 .response-meta summary { padding: 10px 0; color: #374151; cursor: pointer; font-size: 12px; }
 .response-meta pre { color: #374151; }
-.report-actions { margin-top: 14px; }
-.report-actions button { padding: 0; border: 0; background: none; color: #33383b; cursor: pointer; font: inherit; font-size: 12px; text-decoration: underline; text-underline-offset: 2px; }
 .spinner { display: inline-block; width: 12px; height: 12px; margin-right: 6px; border: 2px solid #fff; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -2px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 

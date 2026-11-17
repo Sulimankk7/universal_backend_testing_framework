@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Endpoint Tester is a browser based interface for sending one REST request at a time and checking its HTTP status and, optionally, its complete JSON response. It displays the response and creates a full HTML report for each completed test.
+The Endpoint Tester is a browser based interface for sending one REST request at a time and checking its HTTP status and, optionally, its complete JSON response. Results, assertions, and errors are displayed directly in the interface.
 
 ## Prerequisites
 
@@ -63,12 +63,6 @@ UBTF_PORT=4174 npm run endpoint-tester
 
 The result is **PASSED** only when the actual HTTP status equals the expected status and, if provided, the complete response JSON matches. Object key order is ignored; arrays are compared by length and index. Mismatches show the relevant path and expected/actual values. The response area shows the actual status and status text (or `No response` if the request did not receive one), response body, and elapsed time when available. Expand **Response details** to see the expected status, response time and size, response headers, and assertion details. A request execution error, such as a timeout or network error, appears as an error message.
 
-## HTML Test Report
-
-After each test request completes, the server generates a self-contained HTML report and includes it in the result sent to the page. The report is held in the browser response; this UI does not write it to a report file or to the `reports/` directory.
-
-To view it, select **Open full HTML report** beneath the result. The report opens in a new browser tab/window when the browser allows it. It does not open automatically when a test finishes. If the browser blocks the new window, allow pop-ups for the local UI and click the button again. Since the report is not saved, use the button while that result is still displayed; rerunning a test replaces the displayed result.
-
 ## Troubleshooting
 
 ### Port already in use
@@ -105,7 +99,3 @@ For `POST`, `PUT`, or `PATCH`, check that the body is valid JSON, including doub
 ```
 
 An invalid JSON body is rejected and its error is shown in the response area. Clear the body for requests that do not need one.
-
-### The report tab does not open
-
-The report opens only after you click **Open full HTML report**. If nothing happens, allow pop-ups for `http://127.0.0.1:4173` (or the port you selected), then click the report button again.
